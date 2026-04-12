@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Requisition Master Utility v3 — HR SPOC</title>
+<style>
+  :root{--p:#6C3CE2;--a:#00C6FF;--s:#22c55e;--w:#f59e0b;--d:#ef4444;
+        --bg:#0b1020;--c:#13132a;--c2:#1a1a35;--b:#252b4a;--t:#e5e7eb;--m:#9ca3af;--r:12px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,sans-serif;background:radial-gradient(circle at top,#1f2937 0,#020617 45%);
+       color:var(--t);min-height:100vh;padding:0 0 40px;}
+  .topbar{height:58px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;
+    background:rgba(10,14,30,.97);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:20;}
+  .brand-title{font-size:1.28rem;font-weight:800;
+    background:linear-gradient(135deg,#fff,#a5b4fc,#f59e0b);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.05em;}
+  .brand-sub{font-size:.78rem;color:var(--m);}
+  .user{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--m);}
+  .avatar{width:30px;height:30px;border-radius:999px;
+    background:linear-gradient(135deg,var(--p),var(--a));
+    display:grid;place-items:center;font-weight:700;font-size:.8rem;color:#fff;}
+  /* FULL WIDTH layout */
+  .page{width:100%;padding:28px 32px;}
+  .pg-title{font-size:1.3rem;font-weight:800;margin-bottom:4px;}
+  .pg-sub{font-size:.83rem;color:var(--m);margin-bottom:22px;}
+  .stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+  @media(max-width:1100px){.stats{grid-template-columns:repeat(3,minmax(0,1fr));}}
+  @media(max-width:600px){.stats{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .sc{background:radial-gradient(circle at top right,rgba(59,130,246,.18),rgba(15,23,42,.95));
+    border-radius:11px;border:1px solid rgba(51,65,85,.9);padding:12px 14px;}
+  .sl{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--m);}
+  .sv{font-size:1.3rem;font-weight:800;margin-top:6px;}
+  .sp{font-size:.7rem;color:#a5b4fc;margin-top:4px;}
+  .card{background:radial-gradient(circle at top left,rgba(148,163,248,.12),rgba(15,23,42,.96));
+    border-radius:var(--r);border:1px solid rgba(51,65,85,.85);
+    box-shadow:0 18px 45px rgba(15,23,42,.9);overflow:hidden;}
+  .ch{padding:14px 18px;border-bottom:1px solid rgba(55,65,81,.9);
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .ct{font-size:.9rem;font-weight:700;}
+  .cs{font-size:.76rem;color:var(--m);margin-top:2px;}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;}
+  thead{background:linear-gradient(135deg,rgba(30,64,175,.6),rgba(8,47,73,.95));}
+  th,td{padding:10px 12px;text-align:left;white-space:nowrap;}
+  th{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;
+    border-bottom:1px solid rgba(31,41,55,.9);}
+  tbody tr:nth-child(even){background:rgba(15,23,42,.85);}
+  tbody tr:nth-child(odd){background:rgba(17,24,39,.9);}
+  tbody tr:hover{background:rgba(30,64,175,.3);}
+  tbody tr.row-new-flash{animation:rowFlash 1.5s ease-out;}
+  @keyframes rowFlash{0%{background:rgba(0,198,255,.25);}100%{background:inherit;}}
+  .pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:600;}
+  .pill-blue{background:rgba(59,130,246,.18);color:#bfdbfe;}
+  .pill-green{background:rgba(22,163,74,.2);color:#bbf7d0;}
+  .pill-yellow{background:rgba(234,179,8,.25);color:#fef3c7;}
+  .pill-gray{background:rgba(148,163,184,.25);color:#e5e7eb;}
+  select{background:rgba(15,23,42,.9);border-radius:7px;border:1px solid rgba(55,65,81,.9);
+    color:var(--t);padding:6px 10px;font-size:.78rem;outline:none;}
+  .badge-new{background:rgba(34,197,94,.2);color:#bbf7d0;border-radius:999px;
+    padding:2px 7px;font-size:.65rem;font-weight:700;margin-left:6px;}
+  .links{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+  .link-btn{display:inline-flex;align-items:center;gap:6px;
+    background:rgba(108,60,226,.15);border:1px solid rgba(108,60,226,.5);
+    color:#a5b4fc;border-radius:8px;padding:7px 12px;font-size:.78rem;
+    font-weight:600;text-decoration:none;transition:all .2s;}
+  .link-btn:hover{background:rgba(108,60,226,.28);}
+  #toast{position:fixed;bottom:24px;right:24px;background:rgba(15,23,42,.98);border-radius:10px;
+    border:1px solid rgba(55,65,81,.95);border-left:3px solid var(--s);
+    padding:10px 16px;font-size:.8rem;display:flex;align-items:center;gap:8px;
+    opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .2s,transform .2s;z-index:99;}
+  #toast.show{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .cand-pill{background:rgba(0,198,255,.15);color:#00C6FF;border-radius:999px;
+    padding:2px 9px;font-size:.7rem;font-weight:700;margin-left:6px;}
+  .cand-pill-0{background:rgba(148,163,184,.1);color:#9ca3af;border-radius:999px;
+    padding:2px 9px;font-size:.7rem;margin-left:6px;}
+  .erp-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:linear-gradient(90deg,rgba(108,60,226,.15),rgba(0,198,255,.08));
+    border:1px solid rgba(108,60,226,.4);border-radius:10px;
+    padding:10px 16px;margin-bottom:16px;font-size:.8rem;flex-wrap:wrap;}
+  .erp-bar .label{color:#a5b4fc;font-weight:600;}
+  .erp-badge{background:rgba(108,60,226,.25);color:#a5b4fc;border-radius:999px;
+    padding:2px 8px;font-size:.68rem;font-weight:700;margin-left:6px;}
+  /* Pagination */
+  .pagination{display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-top:1px solid rgba(55,65,81,.8);flex-wrap:wrap;gap:8px;}
+  .pag-info{font-size:.76rem;color:var(--m);}
+  .pag-btns{display:flex;gap:6px;align-items:center;}
+  .pag-btn{background:rgba(108,60,226,.15);border:1px solid rgba(108,60,226,.4);
+    color:#a5b4fc;border-radius:7px;padding:5px 12px;font-size:.76rem;cursor:pointer;transition:all .2s;}
+  .pag-btn:hover:not(:disabled){background:rgba(108,60,226,.3);}
+  .pag-btn:disabled{opacity:.35;cursor:default;}
+  .pag-btn.active{background:rgba(108,60,226,.5);color:#fff;border-color:rgba(108,60,226,.8);}
+  .pag-select{background:rgba(15,23,42,.9);border:1px solid rgba(55,65,81,.9);
+    color:var(--t);border-radius:7px;padding:5px 8px;font-size:.76rem;outline:none;}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="brand-title">Requisition Master Utility</div>
+    <div class="brand-sub">HR SPOC · Owner Assignment · ERP Integrated</div>
+  </div>
+  <div class="user">
+    <span class="avatar">AJ</span>
+    <span>HR SPOC · <span id="syncTs" style="font-size:.72rem;color:#9ca3af;">Syncing…</span></span>
+  </div>
+</header>
+<div class="page">
+  <div class="pg-title">📋 Active Requisitions</div>
+  <div class="pg-sub">Assign owners to requisitions. Candidate counts update live from ERP Entry Form.</div>
+  <div class="links">
+    <a class="link-btn" href="AIGNITE_ERP_FORM.html" target="_blank">➕ Add Candidate via ERP</a>
+    <a class="link-btn" href="AIGNITE-Full-Prototype-v12-6-1-ERP-SYNC.html" target="_blank">🚀 Open AIGNITE Dashboard</a>
+  </div>
+  <div class="stats">
+    <div class="sc"><div class="sl">Total Requisitions</div><div class="sv" id="stat-total">6</div><div class="sp">Active</div></div>
+    <div class="sc"><div class="sl">Total Headcount</div><div class="sv" id="stat-hc">140</div><div class="sp">Open positions</div></div>
+    <div class="sc"><div class="sl">Assigned</div><div class="sv" id="stat-assigned">0</div><div class="sp">owners set</div></div>
+    <div class="sc"><div class="sl">Pending Owner</div><div class="sv" id="stat-pending">6</div><div class="sp">need assignment</div></div>
+    <div class="sc"><div class="sl">Candidates (ERP)</div><div class="sv" id="stat-cands">0</div><div class="sp">from ERP feed</div></div>
+    <div class="sc"><div class="sl">Page Size</div>
+      <div class="sv" style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+        <select class="pag-select" id="pageSizeCtrl" onchange="changePageSize(this.value)">
+          <option value="5">5</option><option value="10" selected>10</option>
+          <option value="20">20</option><option value="50">50</option>
+        </select>
+      </div>
+      <div class="sp">rows per page</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch">
+      <div><div class="ct">Active Requisitions</div>
+        <div class="cs">ERP Live Feed · Newest records on top · Candidate counts auto-sync</div></div>
+      <span id="rec-count" style="font-size:.78rem;color:#9ca3af;">6 records</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="reqTable">
+        <thead>
+          <tr>
+            <th>Requisition ID</th>
+            <th>LOB</th>
+            <th>Headcount</th>
+            <th>Req Creation Date</th>
+            <th>Approval Date</th>
+            <th>Candidates (ERP)</th>
+            <th>Assigned Owner</th>
+            <th>Assignment Date</th>
+            <th>Class Start Date</th>
+          </tr>
+        </thead>
+        <tbody id="reqBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pag-info" id="pagInfo">Showing 1–6 of 6</div>
+      <div class="pag-btns" id="pagBtns"></div>
+    </div>
+  </div>
+</div>
+<div id="toast">✅ <span id="toastMsg">Owner assigned!</span></div>
+<script>
+
+// ── AIGNITE Shared localStorage Keys ──────────────────────────
+const LSKEY   = 'aigniteerpcandidates';
+const LSEDITS = 'aignitespocedits';
+const LSREQ   = 'aignitereqcounts';
+const LSTS    = 'aignitesyncts';
+const LS_OWN  = 'aignite_req_owners';
+const LS_ERP  = 'aignite_erp_candidates';
+const LS_DYN  = 'aignite_dynamic_reqs';
+// ───────────────────────────────────────────────────────────────
+
+// Static base requisitions — note: creationDate added
+const REQS=[
+  {id:'REQ-2026-001',lob:'Healthcare',hc:35,creationDate:'2026-04-01',approvalDate:'2026-04-04',classStart:'2026-05-04',isNew:true},
+  {id:'REQ-2025-1005',lob:'Healthcare',hc:25,creationDate:'2025-04-25',approvalDate:'2025-04-28',classStart:'2025-06-02',isNew:false},
+  {id:'REQ-2025-1004',lob:'Insurance',hc:18,creationDate:'2025-04-18',approvalDate:'2025-04-21',classStart:'2025-05-26',isNew:false},
+  {id:'REQ-2025-1003',lob:'Banking',hc:30,creationDate:'2025-04-11',approvalDate:'2025-04-14',classStart:'2025-05-19',isNew:false},
+  {id:'REQ-2025-1002',lob:'Retail',hc:12,creationDate:'2025-04-04',approvalDate:'2025-04-07',classStart:'2025-05-12',isNew:false},
+  {id:'REQ-2025-1001',lob:'Pharma',hc:20,creationDate:'2025-03-28',approvalDate:'2025-03-31',classStart:'2025-05-05',isNew:false},
+];
+const OWNERS=['Amit Joshi','Priya Desai','Rajan Kumar','Sneha Rao','Vikram Nair'];
+
+// Pagination state
+let currentPage = 1;
+let pageSize = 10;
+
+function getERPRecordsRaw(){
+  try{
+    const a=JSON.parse(localStorage.getItem(LS_ERP)||'[]');
+    const b=JSON.parse(localStorage.getItem(LSKEY)||'[]');
+    const merged=[...a];
+    b.forEach(r=>{if(!merged.find(x=>x.id===r.id))merged.push(r);});
+    return merged;
+  }catch(e){return[];}
+}
+function getDynamicReqs(){
+  try{
+    const dynReqs=JSON.parse(localStorage.getItem(LS_DYN)||'[]');
+    // Enrich with addedAt from ERP records for ms-precision same-day sorting
+    const erpRecs=getERPRecordsRaw();
+    dynReqs.forEach(req=>{
+      if(req.addedAt)return;
+      const matches=erpRecs.filter(r=>(r.requisitionId||r.reqId)===req.id&&r.addedAt);
+      if(matches.length){
+        matches.sort((a,b)=>new Date(a.addedAt)-new Date(b.addedAt));
+        req.addedAt=matches[0].addedAt;
+      }
+    });
+    return dynReqs;
+  }catch(e){return[];}
+}
+
+function getAllReqs(){
+  const staticIds = new Set(REQS.map(r=>r.id));
+  const dyn = getDynamicReqs().filter(r=>!staticIds.has(r.id));
+  const all = [...REQS, ...dyn];
+
+  // Sort newest first.
+  // Priority 1: full addedAt ISO timestamp (ms precision — handles same-day ERP adds correctly)
+  // Priority 2: creationDate / approvalDate date string (static reqs)
+  // Priority 3: numeric suffix of REQ ID as final tie-breaker (REQ-2026-070 > REQ-2026-069)
+  all.sort((a,b)=>{
+    const tsA = a.addedAt || a.creationDate || a.approvalDate || '2000-01-01';
+    const tsB = b.addedAt || b.creationDate || b.approvalDate || '2000-01-01';
+    const diff = new Date(tsB) - new Date(tsA);
+    if(diff !== 0) return diff;
+    // Same timestamp → sort by trailing numeric part of REQ ID descending
+    const numA = parseInt((a.id||'').replace(/\D/g,''), 10) || 0;
+    const numB = parseInt((b.id||'').replace(/\D/g,''), 10) || 0;
+    return numB - numA;
+  });
+  return all;
+}
+
+function getOwners(){return JSON.parse(localStorage.getItem(LS_OWN)||'{}');}
+function saveOwners(o){localStorage.setItem(LS_OWN,JSON.stringify(o));}
+
+function getERPRecords(){ return getERPRecordsRaw(); }
+
+function fmtDate(raw){
+  if(!raw)return'<span style="color:#6b7280">—</span>';
+  const d=new Date(raw);if(isNaN(d))return raw;
+  const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dy=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return dy[d.getDay()]+'&nbsp;&nbsp;'+d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear();
+}
+
+function toast(msg){
+  document.getElementById('toastMsg').textContent=msg;
+  document.getElementById('toast').classList.add('show');
+  setTimeout(()=>document.getElementById('toast').classList.remove('show'),2500);
+}
+
+function countCandidates(){
+  const recs=getERPRecords(); const map={};
+  recs.forEach(r=>{const rid=r.requisitionId||r.reqId;if(rid)map[rid]=(map[rid]||0)+1;});
+  return map;
+}
+
+function injectERPBar(total){
+  if(document.getElementById('erp-bar-req'))return;
+  const bar=document.createElement('div');
+  bar.id='erp-bar-req';bar.className='erp-bar';
+  bar.innerHTML=`<div><span class="label">🔗 ERP Candidate Sync</span>
+    <span class="erp-badge" id="erp-total-badge">${total} candidate${total!==1?'s':''} in ERP</span>
+    <span style="color:#9ca3af;font-size:.74rem;margin-left:10px">Counts shown per REQ row</span></div>
+    <button onclick="window.__reqRefresh()"
+      style="font-size:.74rem;background:rgba(108,60,226,.2);border:none;
+             color:#a5b4fc;border-radius:6px;padding:4px 10px;cursor:pointer;">⟳ Refresh</button>`;
+  const card=document.querySelector('.card');
+  if(card)card.parentNode.insertBefore(bar,card);
+}
+
+function renderPagination(total){
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if(currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage-1)*pageSize + 1;
+  const end   = Math.min(currentPage*pageSize, total);
+  document.getElementById('pagInfo').textContent = `Showing ${start}–${end} of ${total}`;
+  const btns = document.getElementById('pagBtns');
+  btns.innerHTML='';
+
+  // Prev
+  const prev = document.createElement('button');
+  prev.className='pag-btn'; prev.textContent='← Prev';
+  prev.disabled = (currentPage===1);
+  prev.onclick=()=>{currentPage--;renderTable();};
+  btns.appendChild(prev);
+
+  // Page number buttons (show max 7)
+  let pages=[];
+  if(totalPages<=7){for(let i=1;i<=totalPages;i++)pages.push(i);}
+  else{
+    if(currentPage<=4){pages=[1,2,3,4,5,'…',totalPages];}
+    else if(currentPage>=totalPages-3){pages=[1,'…',totalPages-4,totalPages-3,totalPages-2,totalPages-1,totalPages];}
+    else{pages=[1,'…',currentPage-1,currentPage,currentPage+1,'…',totalPages];}
+  }
+  pages.forEach(p=>{
+    const b=document.createElement('button');
+    if(p==='…'){b.className='pag-btn';b.textContent='…';b.disabled=true;}
+    else{
+      b.className='pag-btn'+(p===currentPage?' active':'');
+      b.textContent=p;b.onclick=()=>{currentPage=p;renderTable();};
+    }
+    btns.appendChild(b);
+  });
+
+  // Next
+  const next=document.createElement('button');
+  next.className='pag-btn';next.textContent='Next →';
+  next.disabled=(currentPage===totalPages);
+  next.onclick=()=>{currentPage++;renderTable();};
+  btns.appendChild(next);
+}
+
+function renderTable(){
+  const owners=getOwners(); const candCounts=countCandidates();
+  const body=document.getElementById('reqBody'); body.innerHTML='';
+  const allReqs=getAllReqs();   // sorted newest first
+  const allCands=getERPRecords().length;
+  let assignedCount=0; let totalHC=0;
+
+  document.getElementById('stat-cands').textContent=allCands;
+  document.getElementById('stat-total').textContent=allReqs.length;
+
+  if(allCands>0)injectERPBar(allCands);
+  const badge=document.getElementById('erp-total-badge');
+  if(badge)badge.textContent=allCands+' candidate'+(allCands!==1?'s':'')+' in ERP';
+
+  allReqs.forEach(r=>{
+    const owner=owners[r.id]||''; if(owner)assignedCount++;
+    totalHC += (r.hc||0);
+  });
+  document.getElementById('stat-hc').textContent=totalHC;
+  document.getElementById('stat-assigned').textContent=assignedCount;
+  document.getElementById('stat-pending').textContent=allReqs.length-assignedCount;
+  document.getElementById('rec-count').textContent=allReqs.length+' records';
+
+  // Paginate
+  renderPagination(allReqs.length);
+  const start=(currentPage-1)*pageSize;
+  const pageReqs=allReqs.slice(start, start+pageSize);
+
+  pageReqs.forEach((req,idx)=>{
+    const owner=owners[req.id]||'';
+    const count=candCounts[req.id]||0;
+    const isDyn=!!req.isDynamic;
+    // Highlight very first row (index 0 of sorted list) as newest
+    const isNewest = (start===0 && idx===0);
+    const tr=document.createElement('tr');
+    if(isNewest && req.isNew) tr.classList.add('row-new-flash');
+    tr.innerHTML=`
+      <td><strong style="color:#00C6FF">${req.id}</strong>
+        ${req.isNew?'<span class="badge-new">NEW</span>':''}
+        ${isDyn?'<span style="background:rgba(245,158,11,.18);color:#fbbf24;border-radius:999px;padding:2px 7px;font-size:.65rem;font-weight:700;margin-left:5px;">ERP</span>':''}
+        ${count>0?'<span class="cand-pill">👤 '+count+'</span>':'<span class="cand-pill-0">👤 0</span>'}
+      </td>
+      <td><span class="pill pill-blue">${req.lob}</span></td>
+      <td style="font-weight:700">${req.hc||'<span style="color:#6b7280">TBD</span>'}</td>
+      <td style="color:#fbbf24">${fmtDate(req.creationDate)}</td>
+      <td>${fmtDate(req.approvalDate)}</td>
+      <td>${count>0?'<span class="pill pill-green">'+count+' candidate'+(count!==1?'s':'')+'</span>':'<span class="pill pill-gray">None yet</span>'}</td>
+      <td><select data-req="${req.id}" onchange="assignOwner(this)">
+        <option value="">— Select Owner —</option>
+        ${OWNERS.map(o=>`<option value="${o}"${owner===o?' selected':''}>${o}</option>`).join('')}
+      </select></td>
+      <td style="color:#9ca3af;font-size:.78rem">${owner?'✅ '+new Date().toLocaleDateString('en-IN'):'<span style="color:#6b7280">Not yet assigned</span>'}</td>
+      <td style="color:#a5b4fc">${fmtDate(req.classStart)}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+function assignOwner(sel){
+  const owners=getOwners(); owners[sel.dataset.req]=sel.value;
+  saveOwners(owners); renderTable();
+  toast(sel.value?'✅ Owner assigned: '+sel.value:'Owner removed');
+}
+
+function changePageSize(val){
+  pageSize=parseInt(val); currentPage=1; renderTable();
+}
+
+window.__reqRefresh=function(){
+  const bar=document.getElementById('erp-bar-req'); if(bar)bar.remove(); renderTable();
+};
+
+window.addEventListener('storage',e=>{
+  if(e.key===LS_ERP||e.key===LS_OWN||e.key===LS_DYN||e.key===LSKEY||e.key===LSREQ)renderTable();
+});
+
+document.getElementById('syncTs').textContent='Last sync: '+new Date().toLocaleTimeString('en-IN');
+setInterval(()=>{
+  document.getElementById('syncTs').textContent='Last sync: '+new Date().toLocaleTimeString('en-IN');
+  renderTable();
+},30000);
+renderTable();
+
+// ERP Count Sync fallback
+function loadERPCounts(){
+  let counts={};
+  try{counts=JSON.parse(localStorage.getItem(LSREQ))||{};}catch(e){}
+  document.querySelectorAll('[data-req-id]').forEach(cell=>{
+    const rid=cell.getAttribute('data-req-id');
+    cell.textContent=counts[rid]!==undefined?counts[rid]:0;
+  });
+}
+window.addEventListener('storage',e=>{if(e.key===LSREQ||e.key===LSKEY)loadERPCounts();});
+document.addEventListener('DOMContentLoaded',loadERPCounts);
+setTimeout(loadERPCounts,400);
+
+</script>
+</body>
+</html>

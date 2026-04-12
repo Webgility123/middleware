@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AIGNITE ERP – TA Review Prototype</title>
+<style>
+  :root{--p:#6C3CE2;--a:#00C6FF;--s:#22c55e;--w:#f59e0b;--d:#ef4444;
+        --bg:#0b1020;--c:#13132a;--c2:#1a1a35;--b:#252b4a;--t:#e5e7eb;--m:#9ca3af;--r:12px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:radial-gradient(circle at top,#1f2937 0,#020617 45%);color:var(--t);min-height:100vh;}
+  .topbar{height:58px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;
+    background:rgba(10,14,30,.97);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:20;}
+  .brand-title{font-size:1.28rem;font-weight:800;
+    background:linear-gradient(135deg,#fff,#a5b4fc,#22c55e);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .brand-sub{font-size:.78rem;color:var(--m);}
+  .user{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--m);}
+  .avatar{width:30px;height:30px;border-radius:999px;
+    background:linear-gradient(135deg,var(--p),var(--a));
+    display:grid;place-items:center;font-weight:700;font-size:.8rem;color:#fff;}
+  .layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 58px);transition:grid-template-columns .28s cubic-bezier(.4,0,.2,1);}
+  .layout.sb-hidden{grid-template-columns:0px minmax(0,1fr);}
+  .layout.sb-hidden .sidebar{width:0!important;overflow:hidden!important;padding:0!important;border:none!important;opacity:0;pointer-events:none;}
+  .sidebar{transition:width .28s ease,opacity .2s ease,padding .28s ease;}
+  .sb-btn{background:rgba(165,180,252,.13);border:1px solid rgba(165,180,252,.28);
+    color:#a5b4fc;border-radius:7px;width:30px;height:30px;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;font-size:.95rem;
+    margin-right:10px;flex-shrink:0;transition:background .18s,transform .25s;user-select:none;}
+  .sb-btn:hover{background:rgba(165,180,252,.28);}
+  .sb-btn.rotated{transform:rotate(90deg);}
+  .sidebar{border-right:1px solid var(--b);
+    background:radial-gradient(circle at top left,#1e1b4b 0,#020617 55%);padding:16px 10px 20px;}
+  .nav-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--m);margin:6px 10px 10px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:8px 11px;margin-bottom:4px;
+    border-radius:9px;cursor:pointer;color:var(--m);font-size:.84rem;border:1px solid transparent;transition:background .2s;}
+  .nav-item.active{background:linear-gradient(120deg,rgba(37,99,235,.25),rgba(8,47,73,.9));
+    border-color:rgba(129,140,248,.9);color:#e5e7eb;}
+  .nav-item:hover{background:rgba(15,23,42,.8);}
+  .content{padding:20px 22px 28px;overflow:auto;}
+  .page-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;}
+  .page-title{font-size:1.35rem;font-weight:800;}
+  .page-sub{font-size:.83rem;color:var(--m);margin-top:4px;}
+  .tag{font-size:.7rem;text-transform:uppercase;border-radius:999px;padding:4px 10px;
+    border:1px solid rgba(148,163,184,.45);color:var(--m);}
+  .card{background:radial-gradient(circle at top left,rgba(148,163,248,.12),rgba(15,23,42,.96));
+    border-radius:var(--r);border:1px solid rgba(51,65,85,.85);
+    box-shadow:0 18px 45px rgba(15,23,42,.9);overflow:hidden;margin-bottom:18px;}
+  .card-header{padding:14px 18px;border-bottom:1px solid rgba(55,65,81,.9);
+    display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .card-title{font-size:.9rem;font-weight:700;}
+  .card-sub{font-size:.76rem;color:var(--m);margin-top:2px;}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px;}
+  @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .stat-card{background:radial-gradient(circle at top right,rgba(59,130,246,.18),rgba(15,23,42,.95));
+    border-radius:11px;border:1px solid rgba(51,65,85,.9);padding:12px 14px;}
+  .stat-label{font-size:.7rem;text-transform:uppercase;color:var(--m);}
+  .stat-value{font-size:1.3rem;font-weight:800;margin-top:6px;}
+  .stat-pill{font-size:.7rem;color:#a5b4fc;margin-top:4px;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px;
+    border-bottom:1px solid rgba(55,65,81,.9);
+    background:linear-gradient(90deg,rgba(15,23,42,.96),rgba(8,47,73,.98));}
+  .toolbar input,.toolbar select{background:rgba(15,23,42,.9);border-radius:8px;
+    border:1px solid rgba(55,65,81,.9);color:var(--t);padding:7px 10px;font-size:.8rem;outline:none;}
+  .toolbar input::placeholder{color:var(--m);}
+  .toolbar-btn{border-radius:8px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;
+    padding:7px 13px;background:linear-gradient(135deg,var(--p),#8b5cf6);color:#fff;}
+  table{width:100%;border-collapse:collapse;font-size:.78rem;}
+  thead{background:linear-gradient(135deg,rgba(30,64,175,.6),rgba(8,47,73,.95));}
+  th,td{padding:8px 10px;text-align:left;white-space:nowrap;}
+  th{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#9ca3af;
+    border-bottom:1px solid rgba(31,41,55,.9);}
+  tbody tr:nth-child(even){background:rgba(15,23,42,.85);}
+  tbody tr:nth-child(odd){background:rgba(17,24,39,.9);}
+  tbody tr:hover{background:rgba(30,64,175,.25);}
+  /* Candidate Name — editable link style */
+  .name-link{color:#e5e7eb;font-weight:600;cursor:pointer;
+    display:inline-flex;align-items:center;gap:4px;
+    border-bottom:1px dashed rgba(229,231,235,.35);transition:color .15s;}
+  .name-link:hover{color:#a5b4fc;border-bottom-color:#a5b4fc;}
+  .name-link::after{content:"✏️";font-size:.65rem;opacity:0;transition:opacity .15s;}
+  .name-link:hover::after{opacity:.9;}
+  .name-empty{color:#6b7280;font-style:italic;cursor:pointer;font-size:.76rem;
+    border-bottom:1px dashed rgba(107,114,128,.5);}
+  .name-empty:hover{color:#a5b4fc;}
+  /* Candidate ID link */
+  .cid-link{color:#00C6FF;font-weight:700;cursor:pointer;
+    border-bottom:1px dashed rgba(0,198,255,.5);
+    display:inline-flex;align-items:center;gap:5px;transition:color .15s;}
+  .cid-link:hover{color:#fff;border-bottom-color:#fff;}
+  .cid-link::after{content:"✏️";font-size:.68rem;opacity:.7;}
+  .pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:600;}
+  .pill-blue{background:rgba(59,130,246,.18);color:#bfdbfe;}
+  .pill-green{background:rgba(22,163,74,.2);color:#bbf7d0;}
+  .pill-yellow{background:rgba(234,179,8,.25);color:#fef3c7;}
+  .pill-red{background:rgba(248,113,113,.25);color:#fecaca;}
+  .pill-gray{background:rgba(148,163,184,.25);color:#e5e7eb;}
+  .form-grid{display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr));}
+  @media(max-width:960px){.form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:640px){.form-grid{grid-template-columns:minmax(0,1fr);}}
+  @media(max-width:900px){.layout{grid-template-columns:1fr;}.sidebar{display:none;}}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--m);}
+  .field span.req{color:var(--d);margin-left:3px;}
+  .field input,.field select{background:rgba(15,23,42,.95);border-radius:8px;
+    border:1px solid rgba(55,65,81,.95);padding:7px 10px;font-size:.8rem;color:var(--t);
+    outline:none;transition:border .15s;}
+  .field input:focus,.field select:focus{border-color:var(--p);}
+  .field input::placeholder{color:var(--m);}
+  .field.error input,.field.error select{border-color:var(--d);}
+  .field.error .error-text{display:block!important;color:var(--d);}
+  .error-text{display:none;font-size:.7rem;}
+  .form-actions{margin-top:12px;display:flex;justify-content:flex-end;gap:8px;}
+  .btn-ghost{border-radius:8px;border:1px solid rgba(55,65,81,.9);cursor:pointer;
+    font-size:.78rem;font-weight:600;padding:7px 13px;background:rgba(15,23,42,.95);color:var(--m);}
+  .btn-primary{border-radius:8px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;
+    padding:7px 16px;background:linear-gradient(135deg,var(--p),#8b5cf6);color:#fff;}
+  .sync-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:linear-gradient(90deg,rgba(34,197,94,.1),rgba(0,198,255,.06));
+    border:1px solid rgba(34,197,94,.28);border-radius:10px;
+    padding:10px 16px;margin-bottom:16px;font-size:.8rem;}
+  .sync-bar .lbl{color:#bbf7d0;font-weight:600;}
+  .sync-badge{background:rgba(34,197,94,.2);color:#bbf7d0;border-radius:999px;
+    padding:2px 8px;font-size:.68rem;font-weight:700;margin-left:6px;}
+  #toast{position:fixed;bottom:24px;right:24px;background:rgba(15,23,42,.98);border-radius:10px;
+    border:1px solid rgba(55,65,81,.95);border-left:3px solid var(--s);
+    padding:10px 16px;font-size:.8rem;display:flex;align-items:center;gap:8px;
+    opacity:0;pointer-events:none;transform:translateY(10px);
+    transition:opacity .2s,transform .2s;z-index:999;}
+  #toast.show{opacity:1;pointer-events:auto;transform:translateY(0);}
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.85);backdrop-filter:blur(6px);
+    z-index:200;display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .2s;}
+  .modal-overlay.open{opacity:1;pointer-events:auto;}
+  .modal{background:radial-gradient(circle at top left,#1e1b4b,#0b1020);
+    border:1px solid rgba(129,140,248,.5);border-radius:16px;
+    width:min(860px,96vw);max-height:90vh;overflow-y:auto;
+    box-shadow:0 30px 80px rgba(0,0,0,.8);
+    transform:translateY(20px);transition:transform .25s;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-head{padding:16px 20px;border-bottom:1px solid rgba(55,65,81,.9);
+    display:flex;justify-content:space-between;align-items:center;
+    background:linear-gradient(90deg,rgba(108,60,226,.2),transparent);
+    position:sticky;top:0;z-index:5;backdrop-filter:blur(10px);}
+  .modal-title{font-size:1rem;font-weight:800;}
+  .modal-sub{font-size:.76rem;color:var(--m);margin-top:2px;}
+  .modal-close{background:rgba(55,65,81,.5);border:none;color:var(--t);
+    width:30px;height:30px;border-radius:999px;cursor:pointer;font-size:1rem;
+    display:grid;place-items:center;transition:background .15s;}
+  .modal-close:hover{background:rgba(239,68,68,.4);}
+  .modal-body{padding:20px;}
+  .section-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.14em;
+    color:var(--a);margin:0 0 10px;border-bottom:1px solid rgba(0,198,255,.15);padding-bottom:5px;}
+  .modal-footer{padding:14px 20px;border-top:1px solid rgba(55,65,81,.9);
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    background:rgba(10,14,30,.6);position:sticky;bottom:0;}
+  .btn-cancel{border-radius:8px;border:1px solid rgba(55,65,81,.9);cursor:pointer;
+    font-size:.8rem;font-weight:600;padding:8px 14px;background:rgba(15,23,42,.95);color:var(--m);}
+  .btn-save{border-radius:8px;border:none;cursor:pointer;font-size:.8rem;font-weight:700;
+    padding:8px 20px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;
+    box-shadow:0 4px 14px rgba(34,197,94,.35);}
+  .btn-save:hover{transform:translateY(-1px);}
+  .changed-badge{display:inline-block;background:rgba(234,179,8,.25);color:#fef3c7;
+    border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:700;margin-left:8px;}
+  .field input.modified,.field select.modified{
+    border-color:rgba(234,179,8,.8)!important;box-shadow:0 0 0 3px rgba(234,179,8,.15);}
+  .erp-new-row{border-left:3px solid #22c55e;}
+  .field input[readonly],.field input.locked{background:rgba(108,60,226,.09)!important;border-color:rgba(108,60,226,.4)!important;color:#a5b4fc!important;cursor:not-allowed!important;}
+  .lock-badge{font-size:.62rem;background:rgba(108,60,226,.22);color:#a5b4fc;border-radius:999px;padding:1px 7px;font-weight:700;margin-left:5px;vertical-align:middle;}
+  .readonly-note{font-size:.68rem;color:#6b7280;font-style:italic;margin-top:3px;display:block;}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div style="display:flex;align-items:center;">
+    <button class="sb-btn" id="sbToggle" onclick="toggleSB()" title="Toggle sidebar">☰</button>
+    <div>
+      <div class="brand-title">AIGNITE ERP</div>
+      <div class="brand-sub">TA Team · ERP Snapshot · Click Candidate Name or ID to Edit</div>
+    </div>
+  </div>
+  <div class="user"><span class="avatar">AJ</span><span>SPOC · Edit &amp; Sync</span></div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="nav-label" style="margin-top:18px;">Quick Links</div>
+    <a href="ReqMas.html" target="_blank"
+       style="display:flex;align-items:center;gap:10px;padding:8px 11px;margin-bottom:4px;
+              border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;text-decoration:none;
+              background:linear-gradient(120deg,rgba(108,60,226,.22),rgba(0,198,255,.08));
+              border:1px solid rgba(108,60,226,.5);color:#a5b4fc;transition:background .2s;"
+       onmouseover="this.style.background='rgba(108,60,226,.35)'"
+       onmouseout="this.style.background='linear-gradient(120deg,rgba(108,60,226,.22),rgba(0,198,255,.08))'">
+      📋 &nbsp;Requisition Master
+      <span style="margin-left:auto;font-size:.65rem;background:rgba(0,198,255,.18);
+                   color:#00C6FF;border-radius:999px;padding:2px 6px;font-weight:700;">REQ</span>
+    </a>
+    <a href="dashboard.html" target="_blank"
+       style="display:flex;align-items:center;gap:10px;padding:8px 11px;margin-bottom:4px;
+              border-radius:9px;cursor:pointer;font-size:.84rem;font-weight:600;text-decoration:none;
+              background:linear-gradient(120deg,rgba(0,198,255,.22),rgba(8,47,73,.9));
+              border:1px solid rgba(0,198,255,.5);color:#00C6FF;transition:background .2s;"
+       onmouseover="this.style.background='rgba(0,198,255,.32)'"
+       onmouseout="this.style.background='linear-gradient(120deg,rgba(0,198,255,.22),rgba(8,47,73,.9))'">
+      📊 &nbsp;Dashboard
+      <span style="margin-left:auto;font-size:.65rem;background:rgba(34,197,94,.2);
+                   color:#22c55e;border-radius:999px;padding:2px 6px;font-weight:700;">LIVE</span>
+    </a>
+  </aside>
+
+  <main class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">TA Team · ERP Snapshot</div>
+        <div class="page-sub">
+          Click any <span style="color:#a5b4fc;font-weight:700;">Candidate Name ✏️</span>
+          or <span style="color:#00C6FF;font-weight:700;">Candidate ID ✏️</span> to edit &amp; sync to
+          <strong>AIGNITE-Full-Prototype-v12-6-1.html</strong> automatically.
+        </div>
+      </div>
+      <div class="tag">ERP Integrated · Edit &amp; Sync</div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Candidates in pipeline</div>
+        <div class="stat-value" id="kpi-total">4</div>
+        <div class="stat-pill">Updates on new ERP entry</div></div>
+      <div class="stat-card"><div class="stat-label">Onboarding in progress</div>
+        <div class="stat-value">8</div><div class="stat-pill">3 classes next 7 days</div></div>
+      <div class="stat-card"><div class="stat-label">BGV cleared</div>
+        <div class="stat-value" id="kpi-bgv">21</div>
+        <div class="stat-pill">BGV hit rate 89%</div></div>
+      <div class="stat-card"><div class="stat-label">Pending ERP IDs</div>
+        <div class="stat-value" id="kpi-pending">5</div>
+        <div class="stat-pill">To be generated by US HR</div></div>
+    </div>
+
+    <!-- SYNC BAR -->
+    <div class="sync-bar">
+      <div>
+        <span class="lbl">🔄 ERP Sync Active</span>
+        <span class="sync-badge" id="sb-rows">0 rows</span>
+        <span class="sync-badge" id="sb-edits"
+          style="background:rgba(234,179,8,.2);color:#fef3c7;margin-left:4px;">0 edits</span>
+        <span style="color:#9ca3af;font-size:.74rem;margin-left:10px;">
+          → AIGNITE-Full-Prototype-v12-6-1.html</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:.72rem;color:#9ca3af;" id="sb-ts"></span>
+        <button onclick="forceBroadcast()" class="btn-ghost"
+          style="font-size:.72rem;padding:4px 10px;">⟳ Broadcast Now</button>
+      </div>
+    </div>
+
+    <!-- ADD FORM -->
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">➕ Add Candidate (Local Form)</div>
+          <div class="card-sub">Or use the dedicated ERP Entry Form for full sync</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="AIGNITE_ERP_FORM.html" target="_blank"
+             style="font-size:.74rem;color:#a5b4fc;text-decoration:none;
+                    background:rgba(108,60,226,.2);border-radius:6px;padding:5px 12px;font-weight:600;">
+            ➕ Open Full ERP Form</a>
+          <a href="dashboard.html" target="_blank"
+             style="font-size:.74rem;color:#00C6FF;text-decoration:none;
+                    background:rgba(0,198,255,.15);border-radius:6px;padding:5px 12px;font-weight:600;
+                    border:1px solid rgba(0,198,255,.35);">
+            📊 Open Dashboard</a>
+        </div>
+      </div>
+      <div style="padding:16px 18px;">
+        <form id="entryForm">
+          <div class="form-grid">
+
+            <!-- ★ NEW: Candidate Name — first field -->
+            <div class="field" data-name="candidateName">
+              <label>Candidate Name<span class="req">*</span></label>
+              <input id="f-candidateName" placeholder="e.g. Priya Sharma"/>
+              <small class="error-text">Required</small>
+            </div>
+
+            <div class="field" data-name="candidateId">
+              <label>Candidate ID<span class="req">*</span></label>
+              <input id="f-candidateId" placeholder="CND-5013"/>
+              <small class="error-text">Required</small></div>
+            <div class="field" data-name="employeeId">
+              <label>Employee ID<span class="req">*</span></label>
+              <input id="f-employeeId" placeholder="EMP-1053 or Pending ERP"/>
+              <small class="error-text">Required</small></div>
+            <div class="field" data-name="requisitionId">
+              <label>Requisition ID<span class="req">*</span></label>
+              <input id="f-requisitionId" placeholder="REQ-2026-013"/>
+              <small class="error-text">Required</small></div>
+            <div class="field" data-name="onboardingStage">
+              <label>Onboarding Stage<span class="req">*</span></label>
+              <select id="f-onboardingStage">
+                <option value="">Select stage</option>
+                <option>Offer Sent</option><option>Offer Accepted</option>
+                <option>BGV In Progress</option><option>BGV Cleared</option>
+                <option>Drug Test Pending</option><option>Drug Test Cleared</option>
+                <option>Docs Incomplete</option><option>Ready for Onboarding</option>
+              </select><small class="error-text">Required</small></div>
+            <div class="field" data-name="lob">
+              <label>LOB<span class="req">*</span></label>
+              <select id="f-lob">
+                <option value="">Select LOB</option>
+                <option>Healthcare</option><option>Insurance</option>
+                <option>BPO – Voice</option><option>BPO – Non Voice</option><option>Corporate</option>
+              </select><small class="error-text">Required</small></div>
+            <div class="field" data-name="location">
+              <label>Location<span class="req">*</span></label>
+              <select id="f-location">
+                <option value="">Select location</option>
+                <option>Bengaluru</option><option>Hyderabad</option>
+                <option>Pune</option><option>Chennai</option><option>Delhi</option>
+              </select><small class="error-text">Required</small></div>
+            <div class="field" data-name="startDate">
+              <label>Class Start Date<span class="req">*</span></label>
+              <input id="f-startDate" type="date"/>
+              <small class="error-text">Required</small>
+              <small style="font-size:.68rem;color:#9ca3af;margin-top:2px;">Syncs to Requisition Master → Class Start Date column</small>
+            </div>
+            <div class="field" data-name="approvalDate">
+              <label>Approval Date <em style="color:#6b7280;font-weight:400;font-size:.68rem">(optional)</em></label>
+              <input id="f-approvalDate" type="date"/>
+              <small style="font-size:.68rem;color:#9ca3af;margin-top:2px;">Syncs to Requisition Master → Approval Date column</small>
+            </div>
+            <div class="field"><label>BGV Status</label>
+              <select id="f-bgv"><option>Not Started</option><option>In Progress</option>
+                <option>Cleared</option><option>Not Cleared</option></select></div>
+            <div class="field"><label>OIG Status</label>
+              <select id="f-oig"><option>Pending</option><option>In Progress</option>
+                <option>Cleared</option><option>Not Cleared</option></select></div>
+            <div class="field"><label>Drug Test</label>
+              <select id="f-drug"><option>Not Started</option><option>Pending</option>
+                <option>Cleared</option><option>Not Cleared</option></select></div>
+            <div class="field"><label>Mandatory Docs</label>
+              <select id="f-docs"><option>Pending</option><option>Submitted</option>
+                <option>Incomplete</option><option>Verified</option></select></div>
+            <div class="field" data-name="headcount">
+              <label>Headcount <em style="color:#6b7280;font-weight:400;font-size:.68rem">(optional)</em></label>
+              <input id="f-headcount" type="number" min="1" placeholder="e.g. 25"
+                style="appearance:textfield;-moz-appearance:textfield;"/>
+              <small style="font-size:.68rem;color:#9ca3af;margin-top:2px;">
+                Syncs to Requisition Master → Headcount column
+              </small>
+            </div>
+          </div>
+          <div class="field" style="grid-column:1/-1;margin-top:2px">
+            <label>Checklist Notes <em style="color:#6b7280;font-weight:400;font-size:.68rem">(optional)</em></label>
+            <input id="f-checklist" placeholder="e.g. BGV pending · Docs submitted · Awaiting verification"/>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-ghost" onclick="resetForm()">✕ Clear</button>
+            <button type="submit" class="btn-primary">✅ Add &amp; Sync</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">TA Team Dashboard – ERP Feed</div>
+          <div class="card-sub">
+            Click <span style="color:#a5b4fc;">Candidate Name ✏️</span>
+            or <span style="color:#00C6FF;">Candidate ID ✏️</span>
+            to edit &amp; sync to AIGNITE Dashboard
+          </div>
+        </div>
+        <button class="btn-ghost" onclick="exportCSV()"
+          style="font-size:.74rem;padding:5px 10px;">⬇ Export CSV</button>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="srch" placeholder="🔍 Search name, ID, REQ…"
+          style="min-width:200px;flex:1;" oninput="filterTable()"/>
+        <select id="flt-stage" onchange="filterTable()">
+          <option>All Stages</option><option>Offer Sent</option><option>Offer Accepted</option>
+          <option>BGV In Progress</option><option>BGV Cleared</option>
+          <option>Drug Test Pending</option><option>Ready for Onboarding</option>
+        </select>
+        <select id="flt-lob" onchange="filterTable()">
+          <option>All LOBs</option><option>Healthcare</option><option>Insurance</option>
+          <option>BPO – Voice</option><option>BPO – Non Voice</option><option>Corporate</option>
+        </select>
+        <button class="toolbar-btn" onclick="resetFilters()">⟳ Reset</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th title="Click name to edit">Candidate Name ✏️</th>
+              <th title="Click to edit">Candidate ID ✏️</th>
+              <th>Employee ID</th><th>Requisition ID</th>
+              <th>Stage</th><th>LOB</th><th>Location</th><th>Class Start Date</th>
+              <th>BGV</th><th>OIG</th><th>Drug</th><th>Docs</th>
+            </tr>
+          </thead>
+          <tbody id="ta-body"></tbody>
+        </table>
+        <div id="emptyMsg" style="padding:40px;text-align:center;color:#9ca3af;font-size:.85rem;display:none;">
+          No records found.
+        </div>
+      </div>
+    </section>
+
+    <!-- INTEGRATION NOTES -->
+    <section class="card">
+      <div class="card-header"><div class="card-title">📌 Integration Notes</div></div>
+      <div style="padding:14px 18px;font-size:.8rem;color:#9ca3af;line-height:1.9;">
+        <ul style="padding-left:18px;">
+          <li>Click any <strong style="color:#a5b4fc;">Candidate Name ✏️</strong>
+            or <strong style="color:#00C6FF;">Candidate ID ✏️</strong> to open the full edit modal.</li>
+          <li>Edit any field → click <strong style="color:#22c55e;">💾 Save &amp; Sync</strong>
+            — flows to <strong>AIGNITE-Full-Prototype-v12-6-1.html</strong>.</li>
+          <li>Modified fields highlight in <strong style="color:#f59e0b;">yellow</strong> before saving.</li>
+          <li>All files must be in the same folder and opened in the same Chrome/Edge browser.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editOverlay" onclick="overlayClick(event)">
+  <div class="modal" id="editModal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">✏️ Edit Candidate Record
+          <span class="changed-badge" id="changedBadge" style="display:none;">Unsaved changes</span>
+        </div>
+        <div class="modal-sub" id="editSub">Editing: —</div>
+      </div>
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- ★ Identity — Candidate Name first -->
+      <div class="section-label">🪪 Identity &amp; IDs</div>
+      <div class="form-grid" style="margin-bottom:18px;">
+
+        <!-- Candidate Name — EDITABLE -->
+        <div class="field" style="grid-column:span 3">
+          <label>Candidate Name<span class="req">*</span></label>
+          <input id="e-name" placeholder="Full name of candidate"/>
+          <small style="font-size:.7rem;color:#9ca3af;">Syncs to AIGNITE Dashboard — Candidate Name column</small>
+        </div>
+
+        <div class="field">
+          <label>Candidate ID<span class="req">*</span></label>
+          <input id="e-cid" placeholder="CND-XXXX"/>
+        </div>
+        <div class="field"><label>Employee ID<span class="req">*</span></label>
+          <input id="e-eid" placeholder="EMP-XXXX or Pending ERP"/></div>
+        <div class="field"><label>Requisition ID<span class="req">*</span></label>
+          <input id="e-rid" placeholder="REQ-2026-XXX"/></div>
+      </div>
+
+      <!-- Placement -->
+      <div class="section-label">📍 Placement Details</div>
+      <div class="form-grid" style="margin-bottom:18px;">
+        <div class="field"><label>Onboarding Stage<span class="req">*</span></label>
+          <select id="e-stage">
+            <option>Offer Sent</option><option>Offer Accepted</option>
+            <option>BGV In Progress</option><option>BGV Cleared</option>
+            <option>Drug Test Pending</option><option>Drug Test Cleared</option>
+            <option>Docs Incomplete</option><option>Ready for Onboarding</option>
+          </select></div>
+        <div class="field"><label>LOB<span class="req">*</span></label>
+          <select id="e-lob">
+            <option>Healthcare</option><option>Insurance</option>
+            <option>BPO – Voice</option><option>BPO – Non Voice</option><option>Corporate</option>
+          </select></div>
+        <div class="field"><label>Location<span class="req">*</span></label>
+          <select id="e-loc">
+            <option>Bengaluru</option><option>Hyderabad</option>
+            <option>Pune</option><option>Chennai</option><option>Delhi</option>
+          </select></div>
+        <div class="field"><label>Class Start Date</label>
+          <input id="e-date" type="date"/>
+          <small style="font-size:.68rem;color:#9ca3af;margin-top:2px;">Syncs to Requisition Master → Class Start Date column</small>
+        </div>
+        <div class="field"><label>Approval Date</label>
+          <input id="e-approvalDate" type="date"/>
+          <small style="font-size:.68rem;color:#9ca3af;margin-top:2px;">Syncs to Requisition Master → Approval Date column</small>
+        </div>
+        <div class="field"><label>Owner</label>
+          <select id="e-owner">
+            <option value="">— Select —</option>
+            <option>Amit Joshi</option><option>Priya Desai</option>
+            <option>Rajan Kumar</option><option>Sneha Rao</option><option>Vikram Nair</option>
+          </select></div>
+      </div>
+
+      <!-- Compliance -->
+      <div class="section-label">🛡️ Compliance Status</div>
+      <div class="form-grid" style="margin-bottom:18px;">
+        <div class="field"><label>BGV Status</label>
+          <select id="e-bgv"><option>Not Started</option><option>In Progress</option>
+            <option>Cleared</option><option>Not Cleared</option></select></div>
+        <div class="field"><label>OIG Status</label>
+          <select id="e-oig"><option>Pending</option><option>In Progress</option>
+            <option>Cleared</option><option>Not Cleared</option></select></div>
+        <div class="field"><label>Drug Test</label>
+          <select id="e-drug"><option>Not Started</option><option>Pending</option>
+            <option>Cleared</option><option>Not Cleared</option></select></div>
+        <div class="field"><label>Mandatory Docs</label>
+          <select id="e-docs"><option>Pending</option><option>Submitted</option>
+            <option>Incomplete</option><option>Verified</option></select></div>
+      </div>
+
+      <!-- ★ Checklist Notes — was missing, caused saveEdit crash -->
+      <div class="section-label" style="margin-top:14px;">📝 Checklist Notes</div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Notes / Pending Actions <em style="color:#6b7280;font-weight:400;font-size:.68rem">(optional)</em></label>
+        <input id="e-cl" placeholder="e.g. BGV pending · Docs submitted · Awaiting verification"/>
+      </div>
+
+      <div id="auditRow"
+        style="background:rgba(108,60,226,.1);border:1px solid rgba(108,60,226,.25);
+          border-radius:8px;padding:10px 14px;font-size:.76rem;color:#a5b4fc;display:none;">
+        <strong>Last Updated:</strong> <span id="auditTs">—</span> &nbsp;·&nbsp;
+        <strong>Updated By:</strong> SPOC
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div style="font-size:.75rem;color:var(--m);">
+        💡 Yellow fields = unsaved changes &nbsp;·&nbsp; Save &amp; Sync flows to TA Team Dashboard
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-cancel" onclick="closeEdit()">✕ Cancel</button>
+        <button class="btn-save" onclick="saveEdit()">💾 Save &amp; Sync</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast">✅ <span id="toastMsg">Synced!</span></div>
+
+<script>
+
+// ── AIGNITE Shared localStorage Keys ──────────────────────────
+const LSKEY   = 'aigniteerpcandidates';   // ERP records
+const LSEDITS = 'aignitespocedits';        // TA edits
+const LSREQ   = 'aignitereqcounts';        // REQ ID counts
+const LSTS    = 'aignitesyncts';            // last sync timestamp
+// ───────────────────────────────────────────────────────────────
+
+const LS_ERP   = 'aignite_erp_candidates';
+const LS_EDITS = 'aignite_spoc_edits';
+const LS_PRE   = 'aignite_preloaded_edits';
+const LS_REQ   = 'aignite_req_counts';
+const LS_TS    = 'aignite_sync_ts';
+
+/* ── Preloaded seed — cleared (top 10 records deleted per requirement) ── */
+const PRELOADED = [];
+
+let currentEditIdx=null, currentEditSource=null, originalSnapshot={};
+const $ = id => document.getElementById(id);
+
+/* ── Helpers ── */
+function fmtDate(raw){
+  if(!raw)return'';const d=new Date(raw);if(isNaN(d))return raw;
+  const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return String(d.getDate()).padStart(2,'0')+' '+m[d.getMonth()]+' '+d.getFullYear();
+}
+function toDateInput(s){
+  const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const p=s.split(' ');
+  if(p.length===3){
+    const mo=m.indexOf(p[1]);if(mo>=0)
+      return p[2]+'-'+String(mo+1).padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  }
+  return s;
+}
+function pillCls(v){
+  if(['Cleared','Verified','Submitted','Ready for Onboarding',
+      'Drug Test Cleared','BGV Cleared'].includes(v)) return 'pill-green';
+  if(['In Progress','Offer Accepted','BGV In Progress','Offer Sent'].includes(v)) return 'pill-blue';
+  if(['Pending','Not Started','Drug Test Pending'].includes(v)) return 'pill-yellow';
+  if(['Not Cleared','Incomplete','Docs Incomplete'].includes(v)) return 'pill-red';
+  return 'pill-gray';
+}
+function autoCL(r){
+  const p=[];
+  if(r.bgv!=='Cleared')p.push('BGV: '+r.bgv);
+  if(r.oig!=='Cleared')p.push('OIG: '+r.oig);
+  if(r.drug!=='Cleared')p.push('Drug: '+r.drug);
+  if(!['Verified','Submitted'].includes(r.docs))p.push('Docs: '+r.docs);
+  return p.length ? p.join(' · ') : '✅ All cleared';
+}
+function toast(msg,ok=true){
+  $('toast').style.borderLeftColor=ok?'#22c55e':'#ef4444';
+  $('toastMsg').textContent=msg;$('toast').classList.add('show');
+  setTimeout(()=>$('toast').classList.remove('show'),3400);
+}
+
+/* ── Storage ── */
+function getERP(){try{return JSON.parse(localStorage.getItem(LS_ERP)||'[]');}catch{return[];}}
+function getPreEdits(){try{return JSON.parse(localStorage.getItem(LS_PRE)||'{}');}catch{return{};}}
+function getSPOC(){try{return JSON.parse(localStorage.getItem(LS_EDITS)||'[]');}catch{return[];}}
+function getAllRows(){
+  const pe=getPreEdits();
+  const base=PRELOADED.map((r,i)=>pe[i]?{...r,...pe[i]}:{...r});
+  return [...base,...getERP()];
+}
+
+/* ── Broadcast ── */
+function broadcastSync(){
+  const all=getAllRows();
+  const counts={};
+  all.forEach(r=>{const rid=(r.requisitionId||'').trim();if(rid)counts[rid]=(counts[rid]||0)+1;});
+  localStorage.setItem(LS_REQ,JSON.stringify(counts));
+  /* ── Also push any ERP headcount/classStart/approvalDate into dynamic reqs ── */
+  try{
+    const LS_DYN='aignite_dynamic_reqs';
+    let dynReqs=[];try{dynReqs=JSON.parse(localStorage.getItem(LS_DYN)||'[]');}catch(e){}
+    getERP().forEach(r=>{
+      if(!r.requisitionId)return;
+      const xi=dynReqs.findIndex(x=>x.id===r.requisitionId);
+      if(xi>=0){
+        if(r.headcount)    dynReqs[xi].hc=r.headcount;
+        if(r.startDate)    dynReqs[xi].classStart=r.startDate;
+        if(r.approvalDate) dynReqs[xi].approvalDate=r.approvalDate;
+      }
+    });
+    localStorage.setItem(LS_DYN,JSON.stringify(dynReqs));
+  }catch(e){}
+  const ts=new Date().toISOString();
+  localStorage.setItem(LS_TS,ts);
+  $('sb-rows').textContent=all.length+' row'+(all.length!==1?'s':'');
+  $('sb-edits').textContent=getSPOC().length+' edit'+(getSPOC().length!==1?'s':'');
+  $('sb-ts').textContent='Last: '+new Date(ts).toLocaleTimeString('en-IN');
+}
+function forceBroadcast(){broadcastSync();toast('📡 Broadcast sent!');}
+
+/* ── Render table ── */
+function renderAllRows(){
+  const rows=getAllRows().filter(r=>r.candidateName&&r.candidateName.trim()!=='');
+  const body=$('ta-body');body.innerHTML='';
+  $('emptyMsg').style.display=rows.length?'none':'block';
+  // Reverse: newest records (ERP-added) at top, then preloaded in reverse
+  const reversed=[...rows].reverse();
+  reversed.forEach((r,displayIdx)=>{
+    // Use candidateId as the stable lookup key — immune to array reordering/filtering
+    const safeCid = encodeURIComponent(r.candidateId||'');
+    const tr=document.createElement('tr');
+    tr.setAttribute('data-cid', r.candidateId||'');
+    if(r.source==='erp'||r.addedAt) tr.classList.add('erp-new-row');
+    if(r.updatedAt) tr.style.borderLeft='3px solid rgba(234,179,8,.7)';
+
+    /* Candidate Name cell — editable link */
+    const nameCell = r.candidateName
+      ? `<span class="name-link" onclick="openEditByCid('${safeCid}')" title="Click to edit">${r.candidateName}</span>`
+      : `<span class="name-empty" onclick="openEditByCid('${safeCid}')" title="Click to add name">+ Add name</span>`;
+
+    tr.innerHTML=`
+      <td style="color:#9ca3af;font-weight:600">${displayIdx+1}</td>
+      <td>${nameCell}</td>
+      <td><span class="cid-link" onclick="openEditByCid('${safeCid}')">${r.candidateId}</span></td>
+      <td>${r.employeeId}</td>
+      <td style="color:#a5b4fc">${r.requisitionId}</td>
+      <td><span class="pill ${pillCls(r.onboardingStage)}">${r.onboardingStage}</span></td>
+      <td><span class="pill pill-gray">${r.lob}</span></td>
+      <td>📍${r.location}</td>
+      <td>${fmtDate(r.startDate)}</td>
+      <td><span class="pill ${pillCls(r.bgv)}">${r.bgv}</span></td>
+      <td><span class="pill ${pillCls(r.oig)}">${r.oig}</span></td>
+      <td><span class="pill ${pillCls(r.drug)}">${r.drug}</span></td>
+      <td><span class="pill ${pillCls(r.docs)}">${r.docs}</span></td>`;
+    body.appendChild(tr);
+  });
+  $('kpi-total').textContent=rows.length;
+  $('kpi-bgv').textContent=rows.filter(r=>r.bgv==='Cleared').length;
+  $('kpi-pending').textContent=rows.filter(r=>(r.employeeId||'').toLowerCase().includes('pending')).length;
+  broadcastSync();
+}
+
+/* ── Edit Modal ── */
+function setSelect(id,val){
+  const el=$(id);if(!el)return;
+  for(let i=0;i<el.options.length;i++){
+    if(el.options[i].value===val||el.options[i].text===val){el.selectedIndex=i;return;}
+  }
+}
+function captureModal(){
+  return{
+    name:$('e-name').value,
+    cid:$('e-cid').value, eid:$('e-eid').value, rid:$('e-rid').value,
+    stage:$('e-stage').value, lob:$('e-lob').value, loc:$('e-loc').value,
+    date:$('e-date').value, approvalDate:($('e-approvalDate')||{value:''}).value,
+    bgv:$('e-bgv').value, oig:$('e-oig').value,
+    drug:$('e-drug').value, docs:$('e-docs').value, cl:($('e-cl')||{value:''}).value,
+    owner:$('e-owner').value
+  };
+}
+function onModalChange(e){
+  const el=e.target;
+  const keyMap={
+    'e-name':'name','e-cid':'cid','e-eid':'eid','e-rid':'rid',
+    'e-stage':'stage','e-lob':'lob','e-loc':'loc','e-date':'date',
+    'e-approvalDate':'approvalDate',
+    'e-bgv':'bgv','e-oig':'oig','e-drug':'drug','e-docs':'docs',
+    'e-cl':'cl','e-owner':'owner'
+  };
+  const sk=keyMap[el.id];
+  if(sk) el.classList.toggle('modified', el.value!==originalSnapshot[sk]);
+  $('changedBadge').style.display=
+    document.querySelectorAll('#editModal .modified').length ? 'inline-block' : 'none';
+}
+
+/* ── Open edit by candidateId — stable key, unaffected by sort/filter ── */
+function openEditByCid(encodedCid){
+  const cid = decodeURIComponent(encodedCid);
+  const rows = getAllRows();
+  const idx = rows.findIndex(r => r.candidateId === cid);
+  if(idx === -1){ toast('⚠️ Record not found.', false); return; }
+  openEdit(idx);
+}
+
+function openEdit(idx){
+  const rows=getAllRows();if(idx>=rows.length)return;
+  const r=rows[idx];
+  currentEditIdx=idx;
+  currentEditSource=idx<PRELOADED.length?'preloaded':'erp';
+  /* fill all fields — candidateName first */
+  $('e-name').value=r.candidateName||'';
+  $('e-cid').value=r.candidateId||'';
+  $('e-eid').value=r.employeeId||'';
+  $('e-rid').value=r.requisitionId||'';
+  setSelect('e-stage',r.onboardingStage);
+  setSelect('e-lob',r.lob);
+  setSelect('e-loc',r.location);
+  $('e-date').value=r.startDate?toDateInput(r.startDate):'';
+  const eApprEl=$('e-approvalDate');
+  if(eApprEl) eApprEl.value=r.approvalDate?toDateInput(r.approvalDate):'';
+  setSelect('e-bgv',r.bgv);setSelect('e-oig',r.oig);
+  setSelect('e-drug',r.drug);setSelect('e-docs',r.docs);
+  $('e-cl').value=r.checklist||'';
+  setSelect('e-owner',r.owner||'');
+  originalSnapshot=captureModal();
+  /* clear modified highlights */
+  document.querySelectorAll('#editModal .modified').forEach(el=>el.classList.remove('modified'));
+  $('changedBadge').style.display='none';
+  /* audit row */
+  if(r.updatedAt){
+    $('auditRow').style.display='block';
+    $('auditTs').textContent=new Date(r.updatedAt).toLocaleString('en-IN');
+  } else {
+    $('auditRow').style.display='none';
+  }
+  /* subtitle */
+  $('editSub').textContent='Editing: '+(r.candidateName?r.candidateName+' · ':'')+
+    r.candidateId+' · REQ: '+r.requisitionId;
+  /* open */
+  $('editOverlay').classList.add('open');
+  document.querySelectorAll('#editModal input,#editModal select').forEach(el=>{
+    el.addEventListener('input',onModalChange);
+    el.addEventListener('change',onModalChange);
+  });
+}
+
+function closeEdit(){
+  $('editOverlay').classList.remove('open');
+  currentEditIdx=null; currentEditSource=null;
+  document.querySelectorAll('#editModal input,#editModal select').forEach(el=>{
+    el.removeEventListener('input',onModalChange);
+    el.removeEventListener('change',onModalChange);
+  });
+}
+function overlayClick(e){if(e.target===$('editOverlay'))closeEdit();}
+
+function saveEdit(){
+  const u={
+    candidateName: $('e-name').value.trim(),
+    candidateId:   $('e-cid').value.trim(),
+    employeeId:    $('e-eid').value.trim(),
+    requisitionId: $('e-rid').value.trim(),
+    onboardingStage: $('e-stage').value,
+    lob:           $('e-lob').value,
+    location:      $('e-loc').value,
+    startDate:     $('e-date').value,
+    approvalDate:  ($('e-approvalDate')||{value:''}).value,
+    bgv:           $('e-bgv').value,
+    oig:           $('e-oig').value,
+    drug:          $('e-drug').value,
+    docs:          $('e-docs').value,
+    checklist:     ($('e-cl')||{value:''}).value.trim(),
+    owner:         $('e-owner').value,
+    updatedAt:     new Date().toISOString(),
+    source:        currentEditSource
+  };
+  if(!u.candidateId||!u.employeeId||!u.requisitionId||!u.onboardingStage){
+    toast('⚠️ Required fields missing.',false);return;
+  }
+  if(currentEditSource==='preloaded'){
+    const pe=getPreEdits();pe[currentEditIdx]=u;
+    localStorage.setItem(LS_PRE,JSON.stringify(pe));
+  } else {
+    const erp=getERP();const ei=currentEditIdx-PRELOADED.length;
+    if(ei>=0&&ei<erp.length){erp[ei]={...erp[ei],...u};localStorage.setItem(LS_ERP,JSON.stringify(erp));}
+  }
+  /* push to SPOC edits for AIGNITE Dashboard */
+  const se=getSPOC();
+  const xi=se.findIndex(e=>e.candidateId===u.candidateId);
+  const entry={...u,_editIdx:currentEditIdx};
+  if(xi>=0)se[xi]=entry;else se.push(entry);
+  localStorage.setItem(LS_EDITS,JSON.stringify(se));
+  /* ── Sync classStart & approvalDate edits back to ReqMas ── */
+  if(u.requisitionId && (u.startDate||u.approvalDate)){
+    try{
+      const LS_DYN='aignite_dynamic_reqs';
+      let dynReqs=[];try{dynReqs=JSON.parse(localStorage.getItem(LS_DYN)||'[]');}catch(e){}
+      const di=dynReqs.findIndex(x=>x.id===u.requisitionId);
+      if(di>=0){
+        if(u.startDate)    dynReqs[di].classStart=u.startDate;
+        if(u.approvalDate) dynReqs[di].approvalDate=u.approvalDate;
+        localStorage.setItem(LS_DYN,JSON.stringify(dynReqs));
+      }
+    }catch(e){}
+  }
+  /* ── Broadcast edit to dashboard.html ── */
+  const _ts2=Date.now().toString();
+  localStorage.setItem('aignite_sync_ts',_ts2);
+  try{
+    const _bc2=new BroadcastChannel('aignite_sync');
+    _bc2.postMessage({type:'editCandidate',ts:_ts2,candidateId:u.candidateId,candidateName:u.candidateName});
+    setTimeout(function(){_bc2.close();},600);
+  }catch(_e2){}
+  renderAllRows();closeEdit();
+  toast('💾 Saved & synced — '+(u.candidateName||u.candidateId));
+}
+
+/* ── Add Form ── */
+function validate(){
+  let ok=true;
+  ['candidateName','candidateId','employeeId','requisitionId',
+   'onboardingStage','lob','location','startDate'].forEach(n=>{
+    const f=document.querySelector('.field[data-name="'+n+'"]');if(!f)return;
+    const inp=f.querySelector('input,select');
+    if(!inp.value.trim()){f.classList.add('error');ok=false;}
+    else f.classList.remove('error');
+  });
+  return ok;
+}
+
+document.getElementById('entryForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  if(!validate()){toast('⚠️ Please fill all required fields.',false);return;}
+  const hcRaw = parseInt($('f-headcount').value.trim(), 10);
+  const r={
+    candidateName: $('f-candidateName').value.trim(),
+    candidateId:   $('f-candidateId').value.trim(),
+    employeeId:    $('f-employeeId').value.trim(),
+    requisitionId: $('f-requisitionId').value.trim(),
+    onboardingStage: $('f-onboardingStage').value,
+    lob:           $('f-lob').value,
+    location:      $('f-location').value,
+    startDate:     $('f-startDate').value,
+    approvalDate:  ($('f-approvalDate')||{value:''}).value,
+    bgv:           $('f-bgv').value,
+    oig:           $('f-oig').value,
+    drug:          $('f-drug').value,
+    docs:          $('f-docs').value,
+    checklist:     ($('f-checklist')||{value:''}).value.trim(),
+    headcount:     isNaN(hcRaw) ? null : hcRaw,
+    owner:         '—',
+    addedAt:       new Date().toISOString(),
+    source:        'erp'
+  };
+  const recs=getERP();recs.push(r);
+  localStorage.setItem(LS_ERP,JSON.stringify(recs));
+  /* ── Sync headcount, classStart & approvalDate to ReqMas via aignite_dynamic_reqs ── */
+  if(r.requisitionId){
+    try{
+      const LS_DYN='aignite_dynamic_reqs';
+      let dynReqs=[];
+      try{dynReqs=JSON.parse(localStorage.getItem(LS_DYN)||'[]');}catch(e){}
+      const existIdx=dynReqs.findIndex(x=>x.id===r.requisitionId);
+      if(existIdx>=0){
+        if(!isNaN(hcRaw)) dynReqs[existIdx].hc=hcRaw;
+        if(r.startDate)    dynReqs[existIdx].classStart=r.startDate;
+        if(r.approvalDate) dynReqs[existIdx].approvalDate=r.approvalDate;
+      } else {
+        dynReqs.push({
+          id:           r.requisitionId,
+          lob:          r.lob,
+          hc:           isNaN(hcRaw) ? null : hcRaw,
+          creationDate: r.addedAt.slice(0,10),
+          approvalDate: r.approvalDate || '',
+          classStart:   r.startDate || '',
+          isDynamic:    true,
+          isNew:        true
+        });
+      }
+      localStorage.setItem(LS_DYN,JSON.stringify(dynReqs));
+    }catch(e){}
+  }
+  const se=getSPOC();se.push({...r,_newRow:true});
+  localStorage.setItem(LS_EDITS,JSON.stringify(se));
+  /* ── Broadcast to dashboard.html (BroadcastChannel + sync_ts) ── */
+  const _ts=Date.now().toString();
+  localStorage.setItem('aignite_sync_ts',_ts);
+  try{
+    const _bc=new BroadcastChannel('aignite_sync');
+    _bc.postMessage({type:'newCandidate',ts:_ts,candidateName:r.candidateName,candidateId:r.candidateId});
+    setTimeout(function(){_bc.close();},600);
+  }catch(_e){}
+  renderAllRows();
+  resetForm();
+  setTimeout(function(){
+    var tb=document.getElementById('ta-body');
+    if(tb){
+      var fr=tb.querySelector('tr');
+      if(fr){fr.style.transition='background .5s';fr.style.background='rgba(34,197,94,.28)';
+        fr.scrollIntoView({behavior:'smooth',block:'center'});
+        setTimeout(function(){fr.style.background='';},2400);}
+    }
+  },150);
+  toast('✅ '+r.candidateName+' added — see table below!');
+});
+
+function resetForm(){
+  document.getElementById('entryForm').reset();
+  document.querySelectorAll('#entryForm .field').forEach(f=>f.classList.remove('error'));
+  const hcEl=$('f-headcount');if(hcEl)hcEl.value='';
+}
+
+/* ── Filters ── */
+function filterTable(){
+  const q=$('srch').value.toLowerCase();
+  const st=$('flt-stage').value;
+  const lb=$('flt-lob').value;
+  document.querySelectorAll('#ta-body tr').forEach(tr=>{
+    const txt=tr.innerText.toLowerCase();
+    const stageCell=tr.cells[5]?tr.cells[5].innerText:'';
+    const lobCell=tr.cells[6]?tr.cells[6].innerText:'';
+    tr.style.display=(
+      (!q||txt.includes(q))&&
+      (st==='All Stages'||stageCell.includes(st))&&
+      (lb==='All LOBs'||lobCell.includes(lb))
+    )?'':'none';
+  });
+}
+function resetFilters(){
+  $('srch').value='';
+  $('flt-stage').selectedIndex=0;
+  $('flt-lob').selectedIndex=0;
+  filterTable();
+}
+
+/* ── CSV Export ── */
+function exportCSV(){
+  const rows=getAllRows();if(!rows.length){toast('No rows to export.',false);return;}
+  const h=['Candidate Name','Candidate ID','Employee ID','Requisition ID',
+    'Stage','LOB','Location','Class Start Date','Approval Date','BGV','OIG','Drug','Docs','Owner'];
+  const d=rows.map(r=>[
+    r.candidateName||'',r.candidateId,r.employeeId,r.requisitionId,
+    r.onboardingStage,r.lob,r.location,fmtDate(r.startDate),fmtDate(r.approvalDate||''),
+    r.bgv,r.oig,r.drug,r.docs,r.owner||'—'
+  ].map(v=>'"'+String(v||'').replace(/"/g,'\\"')+'"').join(','));
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([h.join(','),...d].join('\n'));
+  a.download='AIGNITE_ERP_TA_Dashboard.csv';a.click();
+}
+
+/* ── Cross-tab sync ── */
+window.addEventListener('storage',e=>{
+  if([LS_ERP,LS_PRE,LS_EDITS].includes(e.key)) renderAllRows();
+});
+
+renderAllRows();
+
+  /* ── Collapsible sidebar ── */
+  function toggleSB(){
+    var layout=document.querySelector('.layout');
+    var btn=document.getElementById('sbToggle');
+    if(!layout)return;
+    var collapsed=layout.classList.toggle('sb-hidden');
+    btn.textContent=collapsed?'▶':'☰';
+    btn.classList.toggle('rotated',false);
+    btn.title=collapsed?'Expand sidebar':'Collapse sidebar';
+  }
+</script>
+</body>
+</html>
